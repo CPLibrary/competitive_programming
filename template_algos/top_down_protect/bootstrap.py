@@ -1,3 +1,5 @@
+from types import GeneratorType
+
 def bootstrap(f, stack=[]):
     def wrappedfunc(*args, **kwargs):
         if stack:
