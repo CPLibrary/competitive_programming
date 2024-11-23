@@ -2,125 +2,151 @@ import math
 
 class SEG:
     def __init__(self, n):
-        self.n = n
-        self.tree = [-math.inf] * (2 * self.n)  # Initialize with a very low value
-        self.lazy_add = [0] * (2 * self.n)  # Lazy array for addition
-        self.lazy_set = [None] * (2 * self.n)  # Lazy array for setting values
+        """
+        Initialize the segment tree with size n.
+        """
+        self.n = 1
+        while self.n < n:
+            self.n <<= 1  # Ensure n is a power of 2
+        self.size = self.n * 2
+        self.tree = [-math.inf] * self.size  # Initialize with very low values
+        self.lazy_add = [0] * self.size      # Lazy array for range addition
+        self.lazy_set = [None] * self.size   # Lazy array for range setting
 
-    def _apply_set(self, i, val):
-        """Apply set operation to a node."""
+    def _apply_set(self, i, val, l, r):
+        """
+        Apply a range set operation to node i covering range [l, r).
+        """
         self.tree[i] = val
         if i < self.n:
-            self.lazy_set[i] = val  # Set value for lazy propagation
+            self.lazy_set[i] = val
             self.lazy_add[i] = 0  # Clear any pending additions
 
-    def _apply_add(self, i, val):
-        """Apply add operation to a node."""
+    def _apply_add(self, i, val, l, r):
+        """
+        Apply a range add operation to node i covering range [l, r).
+        """
         if self.lazy_set[i] is not None:
-            # If a set value is pending, apply it first
-            self.tree[i] = self.lazy_set[i] + val
+            # If a set operation is pending, update it instead of adding
+            self.lazy_set[i] += val
+            self.tree[i] += val
         else:
+            self.lazy_add[i] += val
             self.tree[i] += val
 
-        if i < self.n:
-            if self.lazy_set[i] is not None:
-                self.lazy_set[i] += val
-            else:
-                self.lazy_add[i] += val
-
-    def _push(self, i):
-        """Push updates from node i down to its children."""
+    def _push(self, i, l, r):
+        """
+        Push the lazy updates from node i down to its children.
+        """
         if self.lazy_set[i] is not None:
-            # If there's a set operation pending, apply it to children
-            self._apply_set(i * 2, self.lazy_set[i])
-            self._apply_set(i * 2 + 1, self.lazy_set[i])
-            self.lazy_set[i] = None
+            mid = (l + r) // 2
+            self._apply_set(i*2, self.lazy_set[i], l, mid)
+            self._apply_set(i*2+1, self.lazy_set[i], mid, r)
+            self.lazy_set[i] = None  # Clear after pushing
+
         if self.lazy_add[i] != 0:
-            # Apply any add operations
-            self._apply_add(i * 2, self.lazy_add[i])
-            self._apply_add(i * 2 + 1, self.lazy_add[i])
-            self.lazy_add[i] = 0
+            mid = (l + r) // 2
+            self._apply_add(i*2, self.lazy_add[i], l, mid)
+            self._apply_add(i*2+1, self.lazy_add[i], mid, r)
+            self.lazy_add[i] = 0  # Clear after pushing
 
     def _build(self, i):
-        """Rebuild tree upwards from node i."""
+        """
+        Rebuild the tree upwards from node i to ensure accurate aggregate values.
+        """
         while i > 1:
             i >>= 1
-            if self.lazy_set[i] is None:  # Rebuild only if no set operation is pending
-                self.tree[i] = max(self.tree[i * 2], self.tree[i * 2 + 1]) + self.lazy_add[i]
+            left = self.tree[i*2]
+            right = self.tree[i*2+1]
+            self.tree[i] = max(left, right)
+            if self.lazy_set[i] is not None:
+                self.tree[i] = self.lazy_set[i] + self.lazy_add[i]
             else:
-                self.tree[i] = self.lazy_set[i]
+                self.tree[i] += self.lazy_add[i]
 
     def _pull(self, l, r):
-        """Push all updates from the root to the node range [l, r)."""
-        h = 1
-        while (l >> h) > 0:
-            if self.lazy_set[l >> h] is not None or self.lazy_add[l >> h] != 0:
-                self._push(l >> h)
-            h += 1
-        h = 1
-        while (r >> h) > 0:
-            if self.lazy_set[(r - 1) >> h] is not None or self.lazy_add[(r - 1) >> h] != 0:
-                self._push((r - 1) >> h)
-            h += 1
+        """
+        Push all updates from the root to the node range [l, r).
+        """
+        h = self.n.bit_length()
+        for d in range(h, 0, -1):
+            node = (l >> d)
+            if node > 0 and (self.lazy_set[node] is not None or self.lazy_add[node] != 0):
+                self._push(node, 0, self.n)
+        for d in range(h, 0, -1):
+            node = ((r -1) >> d)
+            if node > 0 and (self.lazy_set[node] is not None or self.lazy_add[node] != 0):
+                self._push(node, 0, self.n)
 
-    def query(self, l, r):
-        """Query the maximum value in the interval [l, r)."""
-        l += self.n
-        r += self.n
-        self._pull(l, r)  # Make sure all updates are applied
-        ans = -math.inf
+    def query(self, ql, qr):
+        """
+        Query the maximum value in the interval [ql, qr).
+        """
+        res = -math.inf
+        l = ql + self.n
+        r = qr + self.n
+        # Push all pending updates for the query range
+        self._pull(l, r)
         while l < r:
             if l & 1:
-                ans = max(ans, self.tree[l])
-                l += 1
-            if r & 1:
-                r -= 1
-                ans = max(ans, self.tree[r])
-            l >>= 1
-            r >>= 1
-        return ans
+                res = max(res, self.tree[l])
+                l +=1
+            if r &1:
+                r -=1
+                res = max(res, self.tree[r])
+            l >>=1
+            r >>=1
+        return res
 
-    def update_add(self, l, r, val):
-        """Range add: add `val` to all elements in the interval [l, r)."""
-        l0, r0 = l + self.n, r + self.n
-        while l0 < r0:
-            if l0 & 1:
-                self._apply_add(l0, val)
-                l0 += 1
-            if r0 & 1:
-                r0 -= 1
-                self._apply_add(r0, val)
-            l0 >>= 1
-            r0 >>= 1
-        # Rebuild affected nodes to reflect the changes
-        self._build(l + self.n)
-        self._build(r - 1 + self.n)
+    def update_add(self, ul, ur, val):
+        """
+        Range add: add `val` to all elements in the interval [ul, ur).
+        """
+        l = ul + self.n
+        r = ur + self.n
+        orig_l, orig_r = l, r
+        while l < r:
+            if l &1:
+                self._apply_add(l, val, 0, self.n)
+                l +=1
+            if r &1:
+                r -=1
+                self._apply_add(r, val, 0, self.n)
+            l >>=1
+            r >>=1
+        # Rebuild affected nodes to maintain accurate aggregate values
+        self._build(orig_l)
+        self._build(orig_r -1)
 
-    def update_set(self, l, r, val):
-        """Range set: set all elements in the interval [l, r) to `val`."""
-        l0, r0 = l + self.n, r + self.n
-        while l0 < r0:
-            if l0 & 1:
-                self._apply_set(l0, val)
-                l0 += 1
-            if r0 & 1:
-                r0 -= 1
-                self._apply_set(r0, val)
-            l0 >>= 1
-            r0 >>= 1
-        # Rebuild affected nodes to reflect the changes
-        self._build(l + self.n)
-        self._build(r - 1 + self.n)
+    def update_set(self, ul, ur, val):
+        """
+        Range set: set all elements in the interval [ul, ur) to `val`.
+        """
+        l = ul + self.n
+        r = ur + self.n
+        orig_l, orig_r = l, r
+        while l < r:
+            if l &1:
+                self._apply_set(l, val, 0, self.n)
+                l +=1
+            if r &1:
+                r -=1
+                self._apply_set(r, val, 0, self.n)
+            l >>=1
+            r >>=1
+        # Rebuild affected nodes to maintain accurate aggregate values
+        self._build(orig_l)
+        self._build(orig_r -1)
 
-
-    def update(self, i, val):
-        """Point update: set the value at index `i` to `val`."""
-        i += self.n
-        # Push any pending lazy updates to the node
-        self._pull(i, i + 1)
-        # Set the value at the specific index
-        self.tree[i] = val
-        self.lazy_add[i] = 0
-        self.lazy_set[i] = None
-        # Rebuild the tree upwards to reflect the new value
-        self._build(i)
+    def update(self, pos, val):
+        """
+        Point update: set the value at index `pos` to `val`.
+        """
+        pos += self.n
+        # Push all pending updates along the path to the leaf
+        self._pull(pos, pos +1)
+        self.tree[pos] = val
+        self.lazy_add[pos] = 0
+        self.lazy_set[pos] = None
+        # Rebuild the tree upwards to maintain accurate aggregate values
+        self._build(pos)
