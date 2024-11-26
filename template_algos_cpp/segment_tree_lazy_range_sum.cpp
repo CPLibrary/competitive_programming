@@ -8,7 +8,7 @@ private:
     vector<long long> tree, lazy;
     int n;
 
-    void build(vector<int>& arr, int node, int start, int end) {
+    void build(vector<long long>& arr, int node, int start, int end) {
         if (start == end) {
             tree[node] = arr[start];
         } else {
@@ -30,7 +30,7 @@ private:
         }
     }
 
-    void updateRange(int node, int start, int end, int l, int r, int val) {
+    void updateRange(int node, int start, int end, int l, int r, long long val) {
         propagate(node, start, end);
         if (start > end || start > r || end < l) return;
 
@@ -59,14 +59,14 @@ private:
     }
 
 public:
-    LazySegmentTree(vector<int>& arr) {
+    LazySegmentTree(vector<long long>& arr) {
         n = arr.size();
-        tree.resize(4 * n, 0);
-        lazy.resize(4 * n, 0);
+        tree.resize(4 * n, 0LL);
+        lazy.resize(4 * n, 0LL);
         build(arr, 1, 0, n - 1);
     }
 
-    void update(int l, int r, int val) {
+    void update(int l, int r, long long val) {
         updateRange(1, 0, n - 1, l, r, val);
     }
 
@@ -80,18 +80,19 @@ int main() {
     int M;
     cin >> N;
     cin >> M;
-    vector<int> arr = {1, 2, 3, 4, 5};
+    vector<long long> arr = {1LL, 2LL, 3LL, 4LL, 5LL};
     LazySegmentTree segtree(arr);
 
     cout << "Initial sum (0 to 4): " << segtree.query(0, 4) << endl; // 15
 
-    segtree.update(0, 2, 3); // Add 3 to elements 0, 1, 2
+    segtree.update(0, 2, 3LL); // Add 3 to elements 0, 1, 2
     cout << "Sum after range update (0 to 4): " << segtree.query(0, 4) << endl; // 24
 
     cout << "Sum of range (1 to 3): " << segtree.query(1, 3) << endl; // 18
 
-    segtree.update(2, 4, 2); // Add 2 to elements 2, 3, 4
+    segtree.update(2, 4, 2LL); // Add 2 to elements 2, 3, 4
     cout << "Sum after another update (0 to 4): " << segtree.query(0, 4) << endl; // 30
 
     return 0;
 }
+
