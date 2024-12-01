@@ -12,7 +12,7 @@ const int d1 = 113;
 const int N = 1e5 + 10;
 
 // Function to compute prefix powers of d modulo prime
-vector<long long> compute_prefix(int prime, int d) {
+vector<long long> compute_prefix(int N, int prime, int d) {
     vector<long long> prefix(N + 2);
     prefix[0] = 1;
     for (int i = 0; i <= N; ++i) {
