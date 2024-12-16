@@ -48,8 +48,8 @@ int main() {
     string target = "this is an example string for hashing";
 
     // Precompute prefix powers
-    vector<long long> prefix = compute_prefix(mod, d);
-    vector<long long> prefix1 = compute_prefix(mod1, d1);
+    vector<long long> prefix = compute_prefix(N,mod, d);
+    vector<long long> prefix1 = compute_prefix(N,mod1, d1);
 
     // Compute the prefix hashes for the target string
     vector<long long> arr = compute_hash(target, mod, d);
