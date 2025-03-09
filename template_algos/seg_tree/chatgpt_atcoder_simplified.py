@@ -112,3 +112,17 @@ class SEG:
             if (r & -r) == r:
                 break
         return 0
+
+
+### examples of max_right and min_left
+
+T = 10
+# f(x) returns True if x is less than or equal to T.
+f = lambda x: x <= T
+r = seg.max_right(l, f)
+
+
+T = 10
+# f(x) returns True if x is less than or equal to T.
+f = lambda x: x <= T
+l = seg.min_left(r, f)
