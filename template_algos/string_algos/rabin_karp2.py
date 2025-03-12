@@ -38,3 +38,26 @@ def compute(patterns,prime, d):
             hash_value = ((hash_value*d)%prime + ord(char) )%prime
             seen.add(hash_value)
     return seen
+
+
+
+
+# Function to check if a substring s[l:r] (inclusive) is a palindrome
+def is_palindrome(s, l, r):
+    n = len(s)
+    # Precompute the prefix hash for the string and for its reverse
+    forward_hash_arr = compute_hash(s, mod, d)
+    reverse_hash_arr = compute_hash(s[::-1], mod, d)
+    
+    # Hash for substring s[l...r] from the original string.
+    hash_forward = compute_substring_hash(l, r + 1, forward_hash_arr, prefix, mod)
+    
+    # In the reversed string, the corresponding substring is:
+    # s[::-1][n - 1 - r ... n - l]
+    hash_reverse = compute_substring_hash(n - 1 - r, n - l, reverse_hash_arr, prefix, mod)
+    
+    return hash_forward == hash_reverse
+
+
+
+
